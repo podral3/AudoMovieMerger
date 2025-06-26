@@ -1,4 +1,4 @@
-from moviepy import VideoFileClip, AudioFileClip
+from moviepy import VideoFileClip, AudioFileClip, CompositeVideoClip
 from moviepy.audio import fx as afx
 from moviepy.video import fx as vfx
 import os
@@ -16,6 +16,19 @@ def find_first_file_by_extension(directory, extensions):
             return files[0]
     return None
 
+def add_reaction_person(person_video_file, clip):
+    """
+    Adds a reaction person video to the main clip.
+    This function is a placeholder and should be implemented based on specific requirements.
+    """
+    # Load the person video file
+    person_clip = VideoFileClip(person_video_file, has_mask=True).with_effects([vfx.Resize(new_size=(clip.size[0] / 10, clip.size[1] / 10))])
+    person_clip = person_clip.with_position(("left", "bottom"))
+    
+    final = CompositeVideoClip([clip, person_clip], bg_color=(0, 0, 0, 0))
+    # Resize or position the person clip as needed
+    return final
+
 def zoom_video(clip, zoom_factor):
     original_width, original_height = clip.size
 
@@ -32,7 +45,7 @@ def zoom_video(clip, zoom_factor):
     final_clip = clip.with_effects([crop_effect, resize_effect])
     return final_clip
 
-def merge_video_audio(video_file, audio_file, output_file, volume=1.0):
+def merge_video_audio(video_file, audio_file, volume=1.0):
     """
     Merges a video file with an audio file and exports the final video.
     """
@@ -42,18 +55,10 @@ def merge_video_audio(video_file, audio_file, output_file, volume=1.0):
 
     # Set the audio of the video clip to the loaded audio
     final_clip = video_clip.with_audio(audio_clip.with_effects([afx.MultiplyVolume(volume)]))
+    
     #!!!! Zooming the video
     zoomed_video = zoom_video(final_clip, 1.2)
-    
-    # Write the output video file
-    zoomed_video.write_videofile(output_file)
-    
-    # Close the clips to free up resources
-    video_clip.close()
-    audio_clip.close()
-    final_clip.close()
-    
-    print(f"Video successfully created: {output_file}")
+    return zoomed_video
 
 def main():
     """
@@ -65,6 +70,7 @@ def main():
     parser.add_argument('-o', '--output', help='Path to output file')
     parser.add_argument('-vol', '--volume', type=float, default=1.0, 
                         help='Volume percentage (100 = normal volume, 50 = half volume, 200 = double volume)')
+    parser.add_argument('-r', '--reaction', help='Path to reaction person video file (optional)')
     
     args = parser.parse_args()
     
@@ -107,7 +113,19 @@ def main():
     volume = args.volume / 100 if args.volume else 1.0
     
     # Merge the video and audio
-    merge_video_audio(video_file, audio_file, output_file, volume=volume)
+    final_clip = merge_video_audio(video_file, audio_file, volume=volume)
+
+    if args.reaction:
+        # Add reaction person video if provided
+        reaction_person_file = args.reaction
+        if os.path.exists(reaction_person_file):
+            final_clip = add_reaction_person(reaction_person_file, final_clip)
+        else:
+            print(f"Warning: Reaction person video file '{reaction_person_file}' not found. Skipping reaction person addition.")
+    final_clip.write_videofile(output_file)
+
+    # Close the clips to free up resources
+    final_clip.close()
 
 if __name__ == "__main__":
     main()
