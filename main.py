@@ -1,5 +1,6 @@
 from moviepy import VideoFileClip, AudioFileClip
 from moviepy.audio import fx as afx
+from moviepy.video import fx as vfx
 import os
 import sys
 import argparse
@@ -15,6 +16,22 @@ def find_first_file_by_extension(directory, extensions):
             return files[0]
     return None
 
+def zoom_video(clip, zoom_factor):
+    original_width, original_height = clip.size
+
+    new_width = original_width / zoom_factor
+    new_height = original_height / zoom_factor
+
+    x_center = original_width / 2
+    y_center = original_height / 2
+    crop_effect = vfx.Crop(x_center=x_center, y_center=y_center,
+                            width=new_width, height=new_height)
+
+    resize_effect = vfx.Resize(new_size=(original_width, original_height))
+
+    final_clip = clip.with_effects([crop_effect, resize_effect])
+    return final_clip
+
 def merge_video_audio(video_file, audio_file, output_file, volume=1.0):
     """
     Merges a video file with an audio file and exports the final video.
@@ -25,9 +42,11 @@ def merge_video_audio(video_file, audio_file, output_file, volume=1.0):
 
     # Set the audio of the video clip to the loaded audio
     final_clip = video_clip.with_audio(audio_clip.with_effects([afx.MultiplyVolume(volume)]))
+    #!!!! Zooming the video
+    zoomed_video = zoom_video(final_clip, 1.2)
     
     # Write the output video file
-    final_clip.write_videofile(output_file)
+    zoomed_video.write_videofile(output_file)
     
     # Close the clips to free up resources
     video_clip.close()

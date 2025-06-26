@@ -1,3 +1,30 @@
-/Evolution of BabyDr Mango with Pregnant Women in hospital.mp4
-/sigma boy.mp3
+# Ignore media files
+*.mp3
+*.mp4
+*.wav
+*.mov
+*.avi
+*.mkv
+*.webm
+*.ogg
+*.aac
+*.m4a
+
+# Ignore merged output files
+*_merged.mp4
+
+# Ignore Python environment and cache
 /venv
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Ignore OS specific files
+.DS_Store
+Thumbs.db
