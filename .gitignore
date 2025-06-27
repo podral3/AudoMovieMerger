@@ -9,6 +9,7 @@
 *.ogg
 *.aac
 *.m4a
+*.png
 
 # Ignore merged output files
 *_merged.mp4

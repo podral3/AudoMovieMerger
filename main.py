@@ -1,4 +1,4 @@
-from moviepy import VideoFileClip, AudioFileClip, CompositeVideoClip
+from moviepy import VideoFileClip, AudioFileClip, CompositeVideoClip, ImageClip
 from moviepy.audio import fx as afx
 from moviepy.video import fx as vfx
 import os
@@ -9,12 +9,36 @@ import glob
 def find_first_file_by_extension(directory, extensions):
     """
     Find the first file in a directory with any of the given extensions.
+    Skips any file named "reaction.mp4".
     """
     for ext in extensions:
         files = glob.glob(os.path.join(directory, f"*.{ext}"))
         if files:
-            return files[0]
+            # Filter out reaction.mp4 if present
+            filtered_files = [f for f in files if os.path.basename(f) != "reaction.mp4"]
+            # If we have files after filtering, return the first one
+            if filtered_files:
+                return filtered_files[0]
+            # If all files were filtered out (only had reaction.mp4), continue to next extension
+            elif len(files) > 1:
+                # If there are multiple files but all were filtered, this shouldn't happen normally
+                # But just in case, return the second file in the original list
+                return files[1]
     return None
+
+def add_watermark(clip, watermark_file):
+    """
+    Adds a watermark image to the video clip.
+    The watermark is positioned at the bottom right corner of the video.
+    """
+    # Load the watermark image
+    watermark = ImageClip(watermark_file)
+    watermark = watermark.with_effects([vfx.Resize(new_size=(watermark.size[0] / 5, watermark.size[1] / 5))])
+    watermark = watermark.with_position(("right", "top")).with_duration(clip.duration)
+    
+    # Create a composite video clip with the watermark
+    final = CompositeVideoClip([clip, watermark])
+    return final
 
 def add_reaction_person(person_video_file, clip):
     """
@@ -22,7 +46,7 @@ def add_reaction_person(person_video_file, clip):
     This function is a placeholder and should be implemented based on specific requirements.
     """
     # Load the person video file
-    person_clip = VideoFileClip(person_video_file, has_mask=True).with_effects([vfx.Resize(new_size=(clip.size[0] / 10, clip.size[1] / 10))])
+    person_clip = VideoFileClip(person_video_file, has_mask=True).with_effects([vfx.Resize(new_size=(clip.size[0] / 8, clip.size[1] / 8))])
     person_clip = person_clip.with_position(("left", "bottom"))
     
     final = CompositeVideoClip([clip, person_clip], bg_color=(0, 0, 0, 0))
@@ -122,6 +146,13 @@ def main():
             final_clip = add_reaction_person(reaction_person_file, final_clip)
         else:
             print(f"Warning: Reaction person video file '{reaction_person_file}' not found. Skipping reaction person addition.")
+        
+    if os.path.exists( "watermark.png"):
+        # Add watermark if the file exists
+        final_clip = add_watermark(final_clip, "watermark.png")
+    else:
+        print("Warning: Watermark file 'watermark.png' not found. Skipping watermark addition.")
+
     final_clip.write_videofile(output_file)
 
     # Close the clips to free up resources
